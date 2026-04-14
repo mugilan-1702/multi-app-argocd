@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multi-App Demo</title>
+    <style>
+        body { font-family: Arial; text-align: center; 
+               padding: 50px; background: #f0f0f0; }
+        .box { background: white; padding: 30px; 
+               border-radius: 10px; display: inline-block; 
+               min-width: 400px; }
+        button { background: #0066cc; color: white; 
+                 padding: 10px 20px; border: none; 
+                 border-radius: 5px; cursor: pointer; font-size: 16px; }
+        #result { margin-top: 20px; font-size: 18px; color: green; }
+        .env-badge { padding: 5px 15px; border-radius: 20px; 
+                     font-weight: bold; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🚀 Multi-App ArgoCD Demo</h1>
+        <!-- ENV_NAME இங்க automatically set ஆகும் (per environment) -->
+        <p class="env-badge" id="envBadge">Loading...</p>
+        <br><br>
+        <button onclick="callBackend()">Backend-ஐ Call பண்ணு</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Backend port per environment:
+        // dev=30001, staging=30002, prod=30003
+        const port = window.location.port === '30000' ? 30001
+                   : window.location.port === '31000' ? 31001
+                   : 32001;
+
+        async function callBackend() {
+            try {
+                const host = window.location.hostname;
+                const res = await fetch(`http://${host}:${port}/api/hello`);
+                const data = await res.json();
+                document.getElementById('result').innerHTML =
+                    `<b>${data.message}</b><br>Environment: ${data.environment}`;
+                document.getElementById('envBadge').innerText =
+                    `Environment: ${data.environment}`;
+            } catch(e) {
+                document.getElementById('result').innerText = 'Error: ' + e.message;
+            }
+        }
+        callBackend();
+    </script>
+</body>
+</html>
