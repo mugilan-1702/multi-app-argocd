@@ -2,9 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: dev                  # dev namespace
+  namespace: dev
 spec:
-  replicas: 1                     # dev-ல 1 போதும்
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -14,10 +14,24 @@ spec:
         app: frontend
     spec:
       containers:
-        - name: frontend
-          image: mugilan1702/multi-frontend:v2
-          ports:
-            - containerPort: 80
+      - name: frontend
+        image: mugilan1702/multi-frontend:v2
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+        - name: nginx-run
+          mountPath: /var/run
+        - name: nginx-temp
+          mountPath: /tmp
+      volumes:
+      - name: nginx-cache
+        emptyDir: {}
+      - name: nginx-run
+        emptyDir: {}
+      - name: nginx-temp
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -29,6 +43,6 @@ spec:
   selector:
     app: frontend
   ports:
-    - port: 80
-      targetPort: 80
-      nodePort: 30000             # dev frontend port
+  - port: 80
+    targetPort: 80
+    nodePort: 30000
