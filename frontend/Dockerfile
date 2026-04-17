@@ -1,7 +1,11 @@
 FROM nginx:1.27-alpine
+
 RUN apk update && apk upgrade --no-cache && \
-    rm -rf /var/cache/apk/*
+    rm -rf /var/cache/apk/* && \
+    mkdir -p /var/cache/nginx /var/run /tmp && \
+    chown -R nginx:nginx /var/cache/nginx /var/run /tmp /usr/share/nginx/html
+
 COPY index.html /usr/share/nginx/html/index.html
-RUN chown -R nginx:nginx /usr/share/nginx/html
+
 USER nginx
-EXPOSE 8080
+EXPOSE 80
