@@ -2,9 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: staging              # staging namespace
+  namespace: staging
 spec:
-  replicas: 2                     # staging-ல 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -18,6 +18,20 @@ spec:
           image: mugilan1702/multi-frontend:v2
           ports:
             - containerPort: 80
+          volumeMounts:
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
+            - name: nginx-temp
+              mountPath: /tmp
+      volumes:
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+        - name: nginx-temp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -31,4 +45,4 @@ spec:
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 31000             # staging frontend port
+      nodePort: 31000
