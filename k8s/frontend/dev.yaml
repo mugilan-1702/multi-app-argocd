@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: mugilan1702/multi-frontend:20b9f21
+        image: mugilan1702/multi-frontend:cbe8f3d
         ports:
         - containerPort: 80
         volumeMounts:
