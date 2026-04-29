@@ -1,0 +1,74 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - develop
+      - release
+      - main
+    paths:
+      - 'frontend/**'
+      - 'k8s/frontend/**'
+      - '.github/workflows/frontend-cicd.yml'
+
+jobs:
+  build-and-update:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set variables based on branch
+        id: vars
+        run: |
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "tag=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "image=mugilan1702/multi-frontend:$SHORT_SHA" >> $GITHUB_OUTPUT
+
+          if [ "${GITHUB_REF_NAME}" = "develop" ]; then
+            echo "manifest=k8s/frontend/dev.yaml" >> $GITHUB_OUTPUT
+          elif [ "${GITHUB_REF_NAME}" = "release" ]; then
+            echo "manifest=k8s/frontend/staging.yaml" >> $GITHUB_OUTPUT
+          elif [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "manifest=k8s/frontend/prod.yaml" >> $GITHUB_OUTPUT
+          else
+            echo "Unsupported branch"
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update Kubernetes manifest image
+        run: |
+          sed -i "s|image: mugilan1702/multi-frontend:.*|image: ${{ steps.vars.outputs.image }}|g" "${{ steps.vars.outputs.manifest }}"
+          echo "Updated file:"
+          cat "${{ steps.vars.outputs.manifest }}"
+
+      - name: Commit and push manifest changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add "${{ steps.vars.outputs.manifest }}"
+          git commit -m "Update frontend image to ${{ steps.vars.outputs.tag }}" || echo "No changes to commit"
+          git push
